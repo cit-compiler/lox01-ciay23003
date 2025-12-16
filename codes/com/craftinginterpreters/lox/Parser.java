@@ -11,11 +11,18 @@ class Parser {
     
     Parser(List<Token> tokens) {
         this.tokens = tokens;
-  }
+    }
+    Expr parse() {
+        try {
+            return expression();
+        } catch (ParseError error) {
+            return null;
+        }
+    }
   
     private Expr expression(){
         return equality();
-  }
+    }
 
     private Expr equality() {
         Expr expr = comparison();
@@ -25,9 +32,9 @@ class Parser {
         Expr right = comparison();
         expr = new Expr.Binary(expr, operator, right);
     }
-
-    return expr;
-  }
+    
+        return expr;
+    }   
 
     private Expr comparison() {
         Expr expr = term();
@@ -39,7 +46,7 @@ class Parser {
         }
         
         return expr;
-  }
+    }
 
     private Expr term() {
         Expr expr = factor();
@@ -51,7 +58,7 @@ class Parser {
     }
 
         return expr;
-  }
+    }
 
     private Expr factor() {
         Expr expr = unary();
@@ -60,20 +67,20 @@ class Parser {
             Token operator = previous();
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
-    }
+        }
 
         return expr;
-  }
+    }
 
     private Expr unary() {
         if (match(BANG, MINUS)) {
             Token operator = previous();
             Expr right = unary();
             return new Expr.Unary(operator, right);
-    }
+        }
 
         return primary();
-  }
+    }
 
     private Expr primary() {
         if (match(FALSE)) return new Expr.Literal(false);
@@ -88,7 +95,8 @@ class Parser {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
-    }
+        }
+        throw error(peek(), "Expect expression.");
   }
 
     private boolean match(TokenType... types) {
@@ -135,6 +143,27 @@ class Parser {
         return new ParseError();
   }
 
+    private void synchronize() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().type == SEMICOLON) return;
+
+            switch (peek().type) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+                }
+                
+                advance();
+            }
+        }
 
 }
 
